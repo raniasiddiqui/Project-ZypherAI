@@ -9,7 +9,7 @@ from typing import Dict
 
 app = Flask(__name__)
 
-# Setup Redis connection
+# This sets up Redis connection, which was reccomeded that I use in this assessment. 
 redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
 
 # Mock model prediction function
@@ -40,6 +40,9 @@ def process_queue():
             redis_client.set(f"result:{prediction_id}", json.dumps(output))
             redis_client.set(f"status:{prediction_id}", "completed")
         time.sleep(0.1)  # Small delay to prevent CPU overuse
+
+# The above function runs continiously in the background, processing items in the queue. It pops requets from the reddis queue and processes them.
+# It runs the prediction function and stores the result in Redis, updating the status accordingly.
 
 # /predict endpoint with async support
 @app.route('/predict', methods=['POST'])
@@ -72,6 +75,10 @@ def predict():
         prediction = mock_model_predict(input_text)
         return jsonify(prediction), 200
 
+# The above function handles POST requests to the /predict endpoint. 
+# It checks if the request is async or not. If it is async, it generates a unique prediction ID and adds the request to a Redis queue for processing. 
+# If not, it processes the request synchronously and returns the result.
+
 # GET endpoint to fetch prediction by ID
 @app.route('/predict/<prediction_id>', methods=['GET'])
 def get_prediction(prediction_id):
@@ -93,6 +100,11 @@ def get_prediction(prediction_id):
         }), 200
     else:
         return jsonify({"error": "Result not found for the given prediction ID."}), 404
+    
+#Handles GET requests to fetch the prediction result by ID.
+# It checks the status of the prediction and returns the result if available.
+# If the prediction is still being processed, it returns an error message saying its being processed.
+# If the prediction ID is not found, it returns an error message saying the ID is not found. 
 
 if __name__ == '__main__':
     # Start the worker thread
@@ -102,3 +114,6 @@ if __name__ == '__main__':
     # Start the Flask app
     app.run(host='0.0.0.0', port=8080)
 
+# The above code starts the Flask app and the worker thread for processing the queue.
+# The worker thread runs in the background, continuously checking the Redis queue for new prediction requests and processing them.
+# The Flask app handles incoming requests and provides endpoints for making predictions and fetching results. 
