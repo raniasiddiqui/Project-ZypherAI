@@ -26,7 +26,6 @@ My files are organized as follows:
 
 To run this file
 
-- cd zypherai
 - docker-compose up --build
 
 Thats it! Now you can see and test this. 
